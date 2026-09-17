@@ -1,0 +1,8 @@
+[
+  {
+    "raw": "2026-09-17 16:05:12 PID:8901 TID:4422 \"C:\\Windows\\System32\\rundll32.exe\" \"C:\\Users\\public\\evil.dll\",DllRegisterServer",
+    "source": "sysmon",
+    "technique_id": "T1218.011",
+    "expected_rules": []
+  }
+]

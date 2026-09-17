@@ -1,0 +1,8 @@
+[
+  {
+    "raw": "2026-09-17 15:20:33 PID:4123 TID:7788 \"C:\\Windows\\System32\\net.exe\" user /domain",
+    "source": "sysmon",
+    "technique_id": "T1087.002",
+    "expected_rules": []
+  }
+]

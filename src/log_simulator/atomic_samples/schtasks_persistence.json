@@ -1,0 +1,8 @@
+[
+  {
+    "raw": "2026-09-17 14:45:11 PID:5500 TID:3310 \"C:\\Windows\\System32\\schtasks.exe\" /create /tn \\EvilTask /tr \"C:\\malware\\beacon.exe\" /sc onlogon /ru SYSTEM",
+    "source": "sysmon",
+    "technique_id": "T1053.005",
+    "expected_rules": []
+  }
+]

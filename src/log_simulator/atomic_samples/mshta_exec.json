@@ -1,0 +1,8 @@
+[
+  {
+    "raw": "2026-09-17 14:01:55 PID:7812 TID:6634 \"C:\\Windows\\System32\\mshta.exe\" javascript:alert('test');",
+    "source": "sysmon",
+    "technique_id": "T1218.005",
+    "expected_rules": []
+  }
+]

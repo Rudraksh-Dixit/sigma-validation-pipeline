@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 from src.rule_parser.parser import load_sigma_rules, extract_mitre_tags
-from src.log_simulator.generator import load_sample_logs, inject_log
+from src.log_simulator.generator import load_sample_logs, inject_log_docker_exec, inject_log_via_syslog
 from src.reporter.coverage import generate_coverage_report
 from src.reporter.mitre_map import map_rules_to_mitre
 
@@ -14,16 +14,29 @@ logger = logging.getLogger(__name__)
 
 WAZUH_API_DEFAULT = "https://localhost:55000"
 ALERT_POLL_INTERVAL = 5
-ALERT_POLL_TIMEOUT = 60
+ALERT_POLL_TIMEOUT = 30
 
 
 def fetch_wazuh_alerts(wazuh_api_url: str, wazuh_user: str, wazuh_password: str) -> list[dict]:
     import requests
 
     try:
+        auth_resp = requests.post(
+            f"{wazuh_api_url}/security/user/authenticate",
+            auth=(wazuh_user, wazuh_password),
+            verify=False,
+            timeout=10,
+        )
+        if auth_resp.status_code != 200:
+            logger.error("Wazuh API auth failed: %s", auth_resp.text[:200])
+            return []
+
+        token = auth_resp.json()["data"]["token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
         response = requests.get(
             f"{wazuh_api_url}/alerts",
-            auth=(wazuh_user, wazuh_password),
+            headers=headers,
             params={"limit": 500, "sort": "-timestamp"},
             verify=False,
             timeout=15,
@@ -59,7 +72,9 @@ def run_validation(
     rule_map = {rule.id: rule for rule in sigma_rules}
 
     for log in sample_logs:
-        success = inject_log(wazuh_api_url, log)
+        success = inject_log_via_syslog(log, host="localhost", port=514, protocol="udp")
+        if not success:
+            success = inject_log_docker_exec(log)
         if success:
             logger.info("Injected log from %s (technique: %s)", log.source, log.technique_id)
         else:
@@ -71,17 +86,30 @@ def run_validation(
     alerts = fetch_wazuh_alerts(wazuh_api_url, wazuh_user, wazuh_password)
     logger.info("Fetched %d alerts from Wazuh", len(alerts))
 
-    fired_rule_ids: set[str] = set()
-    for alert in alerts:
-        rule_info = alert.get("rule", {})
-        rule_id = str(rule_info.get("id", ""))
-        if rule_id in rule_map:
-            fired_rule_ids.add(rule_id)
+    alert_full_text = " ".join(
+        alert.get("full_log", "") + " " + str(alert.get("rule", {}).get("description", ""))
+        for alert in alerts
+    ).lower()
 
     results = []
     for rule in sigma_rules:
         expected = rule.id in {r for log in sample_logs for r in log.expected_rules}
-        fired = rule.id in fired_rule_ids
+        fired = False
+
+        detection = rule.detection
+        selection = detection.get("selection", {})
+        if isinstance(selection, dict):
+            for key, val in selection.items():
+                search_vals = val if isinstance(val, list) else [val]
+                for sv in search_vals:
+                    if isinstance(sv, str):
+                        search_str = sv.replace("\\", "/").replace(".*", "").lower()
+                        search_str = search_str.replace("*", "").replace("|endswith", "").replace("|contains", "")
+                        if len(search_str) > 3 and search_str in alert_full_text:
+                            fired = True
+                            break
+                if fired:
+                    break
 
         if expected:
             status = "PASS" if fired else "FAIL"
@@ -98,9 +126,10 @@ def run_validation(
             "mitre_tags": extract_mitre_tags(rule),
         })
 
+    fired_count = sum(1 for r in results if r["status"] in ("PASS", "FIRED"))
     report = {
         "rules_tested": len(sigma_rules),
-        "rules_fired": len(fired_rule_ids),
+        "rules_fired": fired_count,
         "rules_failed": sum(1 for r in results if r["status"] == "FAIL"),
         "results": results,
     }

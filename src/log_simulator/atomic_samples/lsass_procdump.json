@@ -1,0 +1,8 @@
+[
+  {
+    "raw": "2026-09-17 12:30:45 PID:6721 TID:5543 \"C:\\Tools\\procdump.exe\" -ma lsass.exe C:\\Users\\public\\lsass.dmp",
+    "source": "sysmon",
+    "technique_id": "T1003.001",
+    "expected_rules": ["f7b2a1c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c"]
+  }
+]

