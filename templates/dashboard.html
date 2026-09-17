@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sigma Validation Pipeline</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--surface:#111827;--surface2:#1e293b;--border:#1e3a5f;
+  --text:#e2e8f0;--text2:#94a3b8;--accent:#06b6d4;--accent2:#0ea5e9;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;--orange:#f97316;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'Cascadia Code','Fira Code','JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);border-bottom:1px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:1rem}
+.logo{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:bold;color:#fff}
+.header h1{font-size:1.5rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{font-size:.8rem;color:var(--text2);margin-top:.15rem}
+.btn{padding:.6rem 1.4rem;border-radius:.5rem;border:none;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(6,182,212,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-danger{background:linear-gradient(135deg,var(--red),#dc2626);color:#fff}
+.btn-danger:hover{box-shadow:0 4px 15px rgba(239,68,68,.3)}
+.container{max-width:1400px;margin:0 auto;padding:1.5rem 2rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.cyan::before{background:var(--accent)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.yellow::before{background:var(--yellow)}
+.stat-card.purple::before{background:var(--purple)}
+.stat-label{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+.stat-value{font-size:2rem;font-weight:700;font-family:var(--mono)}
+.stat-value.cyan{color:var(--accent)}
+.stat-value.green{color:var(--green)}
+.stat-value.red{color:var(--red)}
+.stat-value.yellow{color:var(--yellow)}
+.stat-value.purple{color:var(--purple)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem}
+.chart-card h3{font-size:.9rem;color:var(--text2);margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em}
+.chart-wrapper{position:relative;height:280px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-header h2{font-size:1.1rem;font-weight:600}
+.table-container{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;overflow:hidden;margin-bottom:1.5rem}
+.table-controls{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+.search-input{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;color:var(--text);font-size:.85rem;width:250px;font-family:var(--font)}
+.search-input:focus{outline:none;border-color:var(--accent)}
+.filter-btn{padding:.4rem .8rem;border-radius:.4rem;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:.75rem;cursor:pointer;font-family:var(--font);transition:all .15s}
+.filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surface2)}
+th{padding:.75rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border)}
+td{padding:.7rem 1rem;font-size:.8rem;border-bottom:1px solid rgba(30,58,95,.3)}
+tr:hover{background:rgba(6,182,212,.03)}
+td.mono{font-family:var(--mono);font-size:.75rem;color:var(--text2)}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:.3rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.badge-pass{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.badge-fail{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.badge-fired{background:rgba(6,182,212,.12);color:var(--accent);border:1px solid rgba(6,182,212,.25)}
+.badge-nodata{background:rgba(148,163,184,.08);color:var(--text2);border:1px solid rgba(148,163,184,.15)}
+.badge-critical{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-high{background:rgba(249,115,22,.12);color:var(--orange)}
+.badge-medium{background:rgba(245,158,11,.12);color:var(--yellow)}
+.badge-low{background:rgba(34,197,94,.12);color:var(--green)}
+.tag{display:inline-block;padding:.1rem .45rem;border-radius:.25rem;font-size:.65rem;background:var(--surface2);color:var(--text2);margin-right:.25rem;margin-bottom:.2rem;border:1px solid var(--border)}
+.tag.mitre{color:var(--purple);border-color:rgba(168,85,247,.25)}
+.mitre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem}
+.mitre-card{background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;padding:1rem;transition:all .2s}
+.mitre-card:hover{border-color:var(--accent)}
+.mitre-card .technique-id{font-family:var(--mono);font-size:.85rem;color:var(--accent);margin-bottom:.3rem}
+.mitre-card .technique-name{font-size:.9rem;font-weight:500;margin-bottom:.25rem}
+.mitre-card .technique-tactic{font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:.5rem}
+.mitre-card .coverage-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:.35rem}
+.mitre-card .coverage-fill{height:100%;border-radius:3px;transition:width .5s}
+.mitre-card .coverage-fill.high{background:var(--green)}
+.mitre-card .coverage-fill.medium{background:var(--yellow)}
+.mitre-card .coverage-fill.low{background:var(--red)}
+.mitre-card .coverage-text{font-size:.7rem;color:var(--text2)}
+.run-history{margin-top:1.5rem}
+.run-history h3{font-size:.9rem;color:var(--text2);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em}
+.run-item{display:flex;align-items:center;gap:1rem;padding:.6rem 1rem;background:var(--surface2);border-radius:.4rem;margin-bottom:.4rem;font-size:.8rem}
+.run-item .timestamp{font-family:var(--mono);color:var(--text2);min-width:180px}
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--text2)}
+.empty-state .icon{font-size:3rem;margin-bottom:1rem;opacity:.4}
+.empty-state h3{font-size:1.1rem;margin-bottom:.5rem;color:var(--text)}
+.empty-state p{font-size:.85rem;max-width:400px;margin:0 auto}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.loading-bar{height:3px;background:linear-gradient(90deg,var(--accent),var(--purple),var(--accent));background-size:200%;animation:loading 1.5s infinite;position:fixed;top:0;left:0;right:0;z-index:999;display:none}
+.loading-bar.active{display:block}
+@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">SV</div>
+    <div>
+      <h1>Sigma Validation Pipeline</h1>
+      <p>Detection rule testing & MITRE ATT&CK coverage</p>
+    </div>
+  </div>
+  <div style="display:flex;gap:.75rem;align-items:center">
+    <span id="statusIndicator" style="font-size:.75rem;color:var(--text2)">Ready</span>
+    <button class="btn btn-primary" id="runBtn" onclick="startRun()">Run Validation</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card cyan">
+      <div class="stat-label">Rules Tested</div>
+      <div class="stat-value cyan" id="statTested">--</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Rules Fired</div>
+      <div class="stat-value green" id="statFired">--</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Rules Failed</div>
+      <div class="stat-value red" id="statFailed">--</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value yellow" id="statRate">--</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">MITRE Coverage</div>
+      <div class="stat-value purple" id="statMitre">--</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Rule Status Breakdown</h3>
+      <div class="chart-wrapper"><canvas id="statusChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Detection by Severity</h3>
+      <div class="chart-wrapper"><canvas id="severityChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>Rule Validation Results</h2>
+  </div>
+
+  <div class="table-container">
+    <div class="table-controls">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search rules..." oninput="filterTable()">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter(this)">All</button>
+      <button class="filter-btn" data-filter="PASS" onclick="setFilter(this)">Pass</button>
+      <button class="filter-btn" data-filter="FAIL" onclick="setFilter(this)">Fail</button>
+      <button class="filter-btn" data-filter="FIRED" onclick="setFilter(this)">Fired</button>
+      <button class="filter-btn" data-filter="NO_DATA" onclick="setFilter(this)">No Data</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Rule ID</th>
+            <th>Title</th>
+            <th>Severity</th>
+            <th>Expected</th>
+            <th>Fired</th>
+            <th>Status</th>
+            <th>MITRE Tags</th>
+          </tr>
+        </thead>
+        <tbody id="rulesTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>MITRE ATT&CK Coverage</h2>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:1.5rem">
+    <div id="mitreGrid" class="mitre-grid">
+      <div class="empty-state">
+        <div class="icon">&#128737;</div>
+        <h3>No MITRE data yet</h3>
+        <p>Run a validation with MITRE mapping to see technique coverage</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="run-history" id="runHistory" style="display:none">
+    <h3>Recent Runs</h3>
+    <div id="runList"></div>
+  </div>
+</div>
+
+<script>
+let currentFilter = 'all';
+let statusChart = null;
+let severityChart = null;
+
+async function fetchReport() {
+  try {
+    const res = await fetch('/api/report');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+async function fetchMitre() {
+  try {
+    const res = await fetch('/api/mitre');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+async function fetchStatus() {
+  try {
+    const res = await fetch('/api/status');
+    return await res.json();
+  } catch { return { running: false, history: [] }; }
+}
+
+function renderStats(report) {
+  if (!report) return;
+  document.getElementById('statTested').textContent = report.rules_tested ?? '--';
+  document.getElementById('statFired').textContent = report.rules_fired ?? '--';
+  document.getElementById('statFailed').textContent = report.rules_failed ?? '--';
+  const total = report.rules_tested || 1;
+  const fired = report.rules_fired || 0;
+  const rate = ((fired / total) * 100).toFixed(1);
+  document.getElementById('statRate').textContent = rate + '%';
+}
+
+function renderCharts(report) {
+  if (!report || !report.results) return;
+
+  const counts = { PASS: 0, FAIL: 0, FIRED: 0, NO_DATA: 0 };
+  const severityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+
+  report.results.forEach(r => {
+    counts[r.status] = (counts[r.status] || 0) + 1;
+    severityCounts[r.level] = (severityCounts[r.level] || 0) + 1;
+  });
+
+  const ctx1 = document.getElementById('statusChart').getContext('2d');
+  if (statusChart) statusChart.destroy();
+  statusChart = new Chart(ctx1, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pass', 'Fail', 'Fired', 'No Data'],
+      datasets: [{
+        data: [counts.PASS, counts.FAIL, counts.FIRED, counts.NO_DATA],
+        backgroundColor: ['#22c55e', '#ef4444', '#06b6d4', '#334155'],
+        borderColor: '#111827',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 12 }, padding: 15 } }
+      },
+      cutout: '65%',
+    }
+  });
+
+  const ctx2 = document.getElementById('severityChart').getContext('2d');
+  if (severityChart) severityChart.destroy();
+  severityChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Critical', 'High', 'Medium', 'Low'],
+      datasets: [{
+        label: 'Rules',
+        data: [severityCounts.critical, severityCounts.high, severityCounts.medium, severityCounts.low],
+        backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#22c55e'],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(30,58,95,0.3)' } },
+        y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(30,58,95,0.3)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderTable(report) {
+  if (!report || !report.results) return;
+  const tbody = document.getElementById('rulesTable');
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  const filtered = report.results.filter(r => {
+    if (currentFilter !== 'all' && r.status !== currentFilter) return false;
+    if (search && !r.title.toLowerCase().includes(search) && !r.rule_id.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  tbody.innerHTML = filtered.map(r => {
+    const statusClass = r.status === 'PASS' ? 'badge-pass' : r.status === 'FAIL' ? 'badge-fail' : r.status === 'FIRED' ? 'badge-fired' : 'badge-nodata';
+    const levelClass = `badge-${r.level}`;
+    const tags = (r.mitre_tags || []).map(t => `<span class="tag mitre">${t}</span>`).join('');
+    return `<tr data-status="${r.status}">
+      <td class="mono">${r.rule_id.substring(0,8)}...</td>
+      <td>${r.title}</td>
+      <td><span class="badge ${levelClass}">${r.level}</span></td>
+      <td>${r.expected ? '&#10003;' : '&#10007;'}</td>
+      <td>${r.fired ? '&#10003;' : '&#10007;'}</td>
+      <td><span class="badge ${statusClass}">${r.status.replace('_', ' ')}</span></td>
+      <td>${tags}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMitre(mitre) {
+  if (!mitre || !mitre.techniques) return;
+  const grid = document.getElementById('mitreGrid');
+  const techniques = Object.values(mitre.techniques);
+
+  document.getElementById('statMitre').textContent = mitre.total_techniques;
+
+  grid.innerHTML = techniques.sort((a, b) => b.coverage - a.coverage).map(t => {
+    const covClass = t.coverage >= 80 ? 'high' : t.coverage >= 40 ? 'medium' : 'low';
+    const ruleStatuses = t.rules.map(r => {
+      const cls = r.status === 'PASS' || r.status === 'FIRED' ? 'color:var(--green)' : r.status === 'FAIL' ? 'color:var(--red)' : 'color:var(--text2)';
+      return `<div style="font-size:.7rem;${cls}">&#8226; ${r.title} (${r.status})</div>`;
+    }).join('');
+    return `<div class="mitre-card">
+      <div class="technique-id">${t.technique_id}</div>
+      <div class="technique-name">${t.name}</div>
+      <div class="technique-tactic">${t.tactic}</div>
+      <div class="coverage-bar"><div class="coverage-fill ${covClass}" style="width:${t.coverage}%"></div></div>
+      <div class="coverage-text">${t.coverage}% coverage (${t.rules.length} rule${t.rules.length > 1 ? 's' : ''})</div>
+      <div style="margin-top:.5rem">${ruleStatuses}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterTable() {
+  const report = window._lastReport;
+  if (report) renderTable(report);
+}
+
+function setFilter(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  filterTable();
+}
+
+async function startRun() {
+  const btn = document.getElementById('runBtn');
+  const bar = document.getElementById('loadingBar');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  bar.classList.add('active');
+  document.getElementById('statusIndicator').innerHTML = '<span class="pulse" style="color:var(--accent)">&#9679; Running</span>';
+
+  try {
+    const res = await fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    if (res.status === 409) { alert('Validation already running'); return; }
+
+    const poll = setInterval(async () => {
+      const status = await fetchStatus();
+      if (!status.running) {
+        clearInterval(poll);
+        await loadDashboard();
+        btn.disabled = false;
+        btn.textContent = 'Run Validation';
+        bar.classList.remove('active');
+        document.getElementById('statusIndicator').textContent = 'Ready';
+      }
+    }, 3000);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Run Validation';
+    bar.classList.remove('active');
+    document.getElementById('statusIndicator').textContent = 'Error';
+  }
+}
+
+async function renderHistory() {
+  const status = await fetchStatus();
+  if (!status.history || status.history.length === 0) return;
+  const div = document.getElementById('runHistory');
+  div.style.display = 'block';
+  document.getElementById('runList').innerHTML = status.history.slice().reverse().map(h => {
+    return `<div class="run-item">
+      <span class="timestamp">${h.timestamp}</span>
+      <span>Tested: <strong>${h.rules_tested}</strong></span>
+      <span style="color:var(--green)">Fired: ${h.rules_fired}</span>
+      <span style="color:var(--red)">Failed: ${h.rules_failed}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadDashboard() {
+  const report = await fetchReport();
+  const mitre = await fetchMitre();
+  window._lastReport = report;
+  if (report) {
+    renderStats(report);
+    renderCharts(report);
+    renderTable(report);
+  }
+  if (mitre) renderMitre(mitre);
+  await renderHistory();
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
