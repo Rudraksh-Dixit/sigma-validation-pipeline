@@ -1,0 +1,77 @@
+name: Validate Sigma Rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'config/**'
+      - 'tests/**'
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout pipeline
+        uses: actions/checkout@v4
+
+      - name: Checkout Sigma rules
+        uses: actions/checkout@v4
+        with:
+          repository: Rudraksh-Dixit/sigma-soc-rules
+          path: sigma-rules
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Spin up Wazuh lab
+        run: docker-compose up -d --wait
+
+      - name: Wait for Wazuh API
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sk https://localhost:55000/?pretty; then
+              echo "Wazuh API is ready"
+              break
+            fi
+            echo "Waiting for Wazuh API... ($i/30)"
+            sleep 10
+          done
+
+      - name: Run validation
+        env:
+          SIGMA_RULES_PATH: ./sigma-rules
+          WAZUH_API_URL: https://localhost:55000
+          WAZUH_API_USER: wazuh-wui
+          WAZUH_API_PASSWORD: wazuh-wui
+          REPORT_OUTPUT_DIR: ./reports
+        run: python -m src.validator.engine --rules ./sigma-rules --mitre --output ./reports
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: reports/
+
+      - name: Post summary to PR
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -f reports/summary.md ]; then
+            cat reports/summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Tear down Wazuh lab
+        if: always()
+        run: docker-compose down -v

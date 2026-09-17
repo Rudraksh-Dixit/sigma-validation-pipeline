@@ -1,0 +1,14 @@
+{
+  "attack.t1059.001": {"technique": "T1059.001", "name": "PowerShell", "tactic": "Execution"},
+  "attack.t1059.003": {"technique": "T1059.003", "name": "Windows Command Shell", "tactic": "Execution"},
+  "attack.t1003.001": {"technique": "T1003.001", "name": "LSASS Memory", "tactic": "Credential Access"},
+  "attack.t1003.002": {"technique": "T1003.002", "name": "Security Account Manager", "tactic": "Credential Access"},
+  "attack.t1548.003": {"technique": "T1548.003", "name": "Sudo and Sudo Caching", "tactic": "Privilege Escalation"},
+  "attack.t1078": {"technique": "T1078", "name": "Valid Accounts", "tactic": "Defense Evasion"},
+  "attack.t1082": {"technique": "T1082", "name": "System Information Discovery", "tactic": "Discovery"},
+  "attack.t1083": {"technique": "T1083", "name": "File and Directory Discovery", "tactic": "Discovery"},
+  "attack.t1560": {"technique": "T1560", "name": "Archive Collected Data", "tactic": "Collection"},
+  "attack.t1071.001": {"technique": "T1071.001", "name": "Web Protocols", "tactic": "Command and Control"},
+  "attack.t1055": {"technique": "T1055", "name": "Process Injection", "tactic": "Defense Evasion"},
+  "attack.t1566.001": {"technique": "T1566.001", "name": "Spearphishing Attachment", "tactic": "Initial Access"}
+}
