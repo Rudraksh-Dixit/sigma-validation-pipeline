@@ -8,16 +8,18 @@ def generate_coverage_report(report: dict, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     total = report["rules_tested"]
+    tested = report.get("rules_with_test_data", total)
     fired = report["rules_fired"]
     failed = report["rules_failed"]
-    pass_rate = (fired / total * 100) if total > 0 else 0
+    pass_rate = report.get("pass_rate", 0)
 
     md_lines = [
         "# Sigma Rule Validation Report\n",
-        f"**Rules tested:** {total}  ",
+        f"**Rules loaded:** {total}  ",
+        f"**Rules with test data:** {tested}  ",
         f"**Rules fired:** {fired}  ",
         f"**Rules failed:** {failed}  ",
-        f"**Pass rate:** {pass_rate:.1f}%\n",
+        f"**Pass rate:** {pass_rate}% (of rules with test data)\n",
         "## Results\n",
         "| Rule ID | Title | Level | Expected | Fired | Status |",
         "|---|---|---|---|---|---|",

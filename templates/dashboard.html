@@ -120,8 +120,12 @@ td.mono{font-family:var(--mono);font-size:.75rem;color:var(--text2)}
 <div class="container">
   <div class="stats-grid" id="statsGrid">
     <div class="stat-card cyan">
-      <div class="stat-label">Rules Tested</div>
+      <div class="stat-label">Rules Loaded</div>
       <div class="stat-value cyan" id="statTested">--</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">With Test Data</div>
+      <div class="stat-value yellow" id="statTestData">--</div>
     </div>
     <div class="stat-card green">
       <div class="stat-label">Rules Fired</div>
@@ -131,13 +135,9 @@ td.mono{font-family:var(--mono);font-size:.75rem;color:var(--text2)}
       <div class="stat-label">Rules Failed</div>
       <div class="stat-value red" id="statFailed">--</div>
     </div>
-    <div class="stat-card yellow">
-      <div class="stat-label">Pass Rate</div>
-      <div class="stat-value yellow" id="statRate">--</div>
-    </div>
     <div class="stat-card purple">
-      <div class="stat-label">MITRE Coverage</div>
-      <div class="stat-value purple" id="statMitre">--</div>
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value purple" id="statRate">--</div>
     </div>
   </div>
 
@@ -234,12 +234,10 @@ async function fetchStatus() {
 function renderStats(report) {
   if (!report) return;
   document.getElementById('statTested').textContent = report.rules_tested ?? '--';
+  document.getElementById('statTestData').textContent = report.rules_with_test_data ?? '--';
   document.getElementById('statFired').textContent = report.rules_fired ?? '--';
   document.getElementById('statFailed').textContent = report.rules_failed ?? '--';
-  const total = report.rules_tested || 1;
-  const fired = report.rules_fired || 0;
-  const rate = ((fired / total) * 100).toFixed(1);
-  document.getElementById('statRate').textContent = rate + '%';
+  document.getElementById('statRate').textContent = report.pass_rate != null ? report.pass_rate + '%' : '--';
 }
 
 function renderCharts(report) {
@@ -333,8 +331,6 @@ function renderMitre(mitre) {
   if (!mitre || !mitre.techniques) return;
   const grid = document.getElementById('mitreGrid');
   const techniques = Object.values(mitre.techniques);
-
-  document.getElementById('statMitre').textContent = mitre.total_techniques;
 
   grid.innerHTML = techniques.sort((a, b) => b.coverage - a.coverage).map(t => {
     const covClass = t.coverage >= 80 ? 'high' : t.coverage >= 40 ? 'medium' : 'low';

@@ -127,10 +127,15 @@ def run_validation(
         })
 
     fired_count = sum(1 for r in results if r["status"] in ("PASS", "FIRED"))
+    tested_count = sum(1 for r in results if r["expected"])
+    failed_count = sum(1 for r in results if r["status"] == "FAIL")
+    pass_rate = round((tested_count - failed_count) / tested_count * 100, 1) if tested_count > 0 else 0.0
     report = {
         "rules_tested": len(sigma_rules),
+        "rules_with_test_data": tested_count,
         "rules_fired": fired_count,
-        "rules_failed": sum(1 for r in results if r["status"] == "FAIL"),
+        "rules_failed": failed_count,
+        "pass_rate": pass_rate,
         "results": results,
     }
 
